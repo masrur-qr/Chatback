@@ -21,7 +21,8 @@ func Connection(){
 	}
 	// log.Printf("DB URl%v\n",DB_Url)
 	// log.Printf("DB URl%v\n",os.Getenv("DBURL"))
-	clientOptions := options.Client().ApplyURI(DB_Url)
+	// clientOptions := options.Client().ApplyURI(DB_Url)
+	clientOptions := options.Client().ApplyURI("mongodb://mas:mas@mongo:27017")
 	// clientOptions := options.Client().ApplyURI(os.Getenv("DBURL"))
 	clientG, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
