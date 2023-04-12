@@ -175,7 +175,7 @@ func WebSocket(c *gin.Context) {
 
 func Cors(c *gin.Context) {
 	if urlcors == "" {
-		urlcors = "http://127.0.0.1:3000"
+		urlcors = "https://chat.khorog.dev"
 	}
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", urlcors)
