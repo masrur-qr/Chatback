@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <button id="signin">cick</button>
+    <button id="chatwith">chatwith</button>
+    <button id="ws2">message</button>
+    <script>
+        let socket = new WebSocket("ws://127.0.0.1:4500/ws")
+        console.log("Connection to web Socket");
+        socket.onopen = () => {
+            console.log("connected succesfully");
+            json = {
+                type: "list"
+            }
+            socket.send(JSON.stringify(json))
+        }
+        socket.onclose = (evt) => {
+            console.log("connection closed", evt);
+        }
+        socket.onerror = (err) => {
+            console.log("error", err);
+        }
+        socket.onmessage = (msg) => {
+            console.log(msg.message);
+            console.log(JSON.parse(msg.data));
+        }
+
+        document.getElementById("ws2").onclick = evt => {
+            console.log("hello");
+            json = {
+                type: "message",
+                reciverid: "6409b0cae0a61d489b56c07d"
+            }
+            socket.send(JSON.stringify(json))
+        }
+        document.getElementById("chatwith").onclick = evt => {
+            console.log("chatwith");
+            json = {
+                type: "chatwith",
+                reciverid: "6406f6d752ee5e67ce757d64"
+            }
+            socket.send(JSON.stringify(json))
+        }
+    </script>
+</body>
+
+</html>

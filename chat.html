@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body style="display: flex;">
+    <div style="display: flex;flex-direction: column;width: 10em;
+    margin: 2em;gap: 1em;">
+        <input type="text" placeholder="login" id="login">
+        <input type="text" placeholder="name" id="name">
+        <input type="text" placeholder="Surname" id="Surname">
+        <input type="text" placeholder="Lastname" id="Lastname">
+        <input type="text" placeholder="password" id="password">
+        <button id="create">create</button>
+    </div>
+    <div style="display: flex;flex-direction: column;width: 10em;
+    margin: 2em;gap: 1em;">
+        <input type="text" placeholder="password" id="passwordlog">
+        <input type="text" placeholder="login" id="loginlog">
+        <button id="loginSub">login</button>
+    </div>
+    <script>
+        document.getElementById("create").onclick = evt => {
+            console.log("gttftf");
+            // WARNING: For POST requests, body is set to null by browsers.
+            var data = JSON.stringify({
+                "login": document.getElementById("login").value,
+                "name": document.getElementById("name").value,
+                "Surname": document.getElementById("Surname").value,
+                "Lastname": document.getElementById("Lastname").value,
+                "password": document.getElementById("password").value
+            });
+
+            var xhr = new XMLHttpRequest();
+            xhr.withCredentials = true;
+
+            xhr.addEventListener("readystatechange", function () {
+                if (this.readyState === 4) {
+                    console.log(this.responseText);
+                }
+            });
+
+            xhr.open("POST", "http://127.0.0.1:4500/create");
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.send(data);
+        }
+        document.getElementById("loginSub").onclick = evt => {
+            console.log("fef");
+            // WARNING: For POST requests, body is set to null by browsers.
+            var data = JSON.stringify({
+                "login": document.getElementById("loginlog").value,
+                "password": document.getElementById("passwordlog").value
+            });
+
+            var xhr = new XMLHttpRequest();
+            xhr.withCredentials = true;
+
+            xhr.addEventListener("readystatechange", function () {
+                if (this.readyState === 4) {
+                    console.log(this.responseText);
+                    console.log(String(document.cookie.split(`"`)[1]));
+                    console.log(JSON.parse(document.cookie.valueOf("token")));
+                    veru = document.cookie.split(`"`)[1]
+                    // console.log(JSON.parse(String(veru)));
+                }
+            });
+
+            xhr.open("POST", "http://127.0.0.1:4500/signin");
+            xhr.setRequestHeader("Content-Type", "application/json");
+            // WARNING: Cookies will be stripped away by the browser before sending the request.
+
+            xhr.send(data);
+        }
+
+
+    </script>
+</body>
+
+</html>
