@@ -210,6 +210,7 @@ func (cl *WebHandler) message() {
 		MessagesDecode structs.Message
 		MessagesArr    []structs.Message
 		// user         structs.Create
+		// user         structs.Create
 	)
 	json.Unmarshal(MessageFromUser, &MessagesDecode)
 	fmt.Printf("MessageFromUser: %v\n", MessagesDecode)
