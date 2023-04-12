@@ -177,6 +177,7 @@ func Cors(c *gin.Context) {
 	if urlcors == "" {
 		urlcors = "https://chat.khorog.dev"
 	}
+// ssd
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", urlcors)
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
