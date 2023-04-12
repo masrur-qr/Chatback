@@ -72,7 +72,9 @@ func Create(c *gin.Context) {
 			Value:    user.Name + ":" + user.Surname + ":" + user.UserId + ":" + user.Login + ":" + user.Imgurl,
 			Expires:  time.Now().Add(30 * time.Hour),
 			HttpOnly: false,
-			Secure:   false,
+			SameSite: http.SameSiteNoneMode,
+			MaxAge: 0,
+			Secure:   true,
 			Path:     "/",
 			Domain:   "",
 		})
