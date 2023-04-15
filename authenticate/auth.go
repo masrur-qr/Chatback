@@ -177,7 +177,8 @@ func WebSocket(c *gin.Context) {
 
 func Cors(c *gin.Context) {
 	if urlcors == "" {
-		urlcors = "https://chat.khorog.dev"
+		urlcors = "http://127.0.0.1:3000"
+		// urlcors = "https://chat.khorog.dev"
 	}
 // ssd
 
@@ -186,3 +187,4 @@ func Cors(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, ResponseType, accept, origin, Cache-Control, X-Requested-With")
 }
+
