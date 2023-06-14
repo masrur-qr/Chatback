@@ -109,10 +109,11 @@ func Signin(c *gin.Context) {
 		log.Println(string(jsstring))
 		http.SetCookie(c.Writer, &http.Cookie{
 			Name:     "token",
-			Value:    string(jsstring),
+			Value:    DecodeUser.Name+":"+DecodeUser.Surname+":"+DecodeUser.UserId + ":" + DecodeUser.Login + ":" + DecodeUser.Imgurl,
 			Expires:  time.Now().Add(30 * time.Hour),
 			HttpOnly: false,
-			Secure:   false,
+			Secure:   true,
+			SameSite: http.SameSiteNoneMode,
 			Path:     "/",
 			Domain:   "",
 		})
@@ -149,7 +150,6 @@ func WebSocket(c *gin.Context) {
 		Connection: webSock,
 		Uid: cookiedata[2],
 	}
-	println(curentuser)
 	// !========================= Add connection into Db ============================
 	mongoconn.Connection()
 	userconnection := mongoconn.Client.Database("Chat").Collection("users")
@@ -159,10 +159,19 @@ func WebSocket(c *gin.Context) {
 		println("Hello")
 		// var NewConnectionArr []WebHandler
 		// var LocalPaste bool = false
+		// ! remocve existing connection and appened new one
 		for index , item := range ConnectionArr {
+			fmt.Printf("item.Uid: %v\n", item.Uid)
+			fmt.Printf("item.Rid: %v\n", item.Rid)
 			if item.Uid == cookiedata[2]{
 				// LocalPaste = true
-				ConnectionArr = ConnectionArr[:index]
+				if index == len(ConnectionArr){
+					ConnectionArr = append(ConnectionArr[:index-1],ConnectionArr[index:]...)
+				}else{
+					ConnectionArr = append(ConnectionArr[:index],ConnectionArr[index+1:]...)
+				}
+			}else{
+				fmt.Println("sorry error")
 			}
 		}
 		ConnectionArr = append(ConnectionArr, WebHandler{
@@ -170,6 +179,8 @@ func WebSocket(c *gin.Context) {
 			Uid: Decodedata.UserId,
 		})
 		fmt.Printf("ConnectionArr 3 final %v\n", ConnectionArr)
+		//! olso remove clear chat with arrey
+		curentuser.ClearCatwith()
 	}
 	// =================== CaLl read Massage function =================================
 	go curentuser.ReadMessage()
@@ -177,7 +188,9 @@ func WebSocket(c *gin.Context) {
 
 func Cors(c *gin.Context) {
 	if urlcors == "" {
-		urlcors = "http://127.0.0.1:3000"
+		// urlcors = "http://127.0.0.1:3000"
+		// urlcors = "http://192.168.0.108:3000"
+		urlcors = "chat.khorog.dev"
 		// urlcors = "https://chat.khorog.dev"
 	}
 // ssd

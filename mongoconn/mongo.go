@@ -17,7 +17,7 @@ var (
 )
 func Connection(){
 	if(DB_Url ==  ""){
-		DB_Url = "mongodb://mas:mas@34.71.29.69:27017"
+		DB_Url = "mongodb://127.0.0.1:27017"
 	}
 	// log.Printf("DB URl%v\n",DB_Url)
 	// log.Printf("DB URl%v\n",os.Getenv("DBURL"))

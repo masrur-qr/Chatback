@@ -41,3 +41,8 @@ type Notification struct {
 	ReciverId      string `bson:"reciverid"`
 	Type      string `json:"type"`
 }
+type NotificationStruct struct {
+	UserId string `json:"userid"`
+	Amount int    `json:"amount"`
+	Type   string `json:"type"`
+}
