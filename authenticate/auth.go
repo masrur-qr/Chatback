@@ -190,7 +190,7 @@ func Cors(c *gin.Context) {
 	if urlcors == "" {
 		// urlcors = "http://127.0.0.1:3000"
 		// urlcors = "http://192.168.0.108:3000"
-		urlcors = "chat.khorog.dev"
+		urlcors = "https://chat.khorog.dev"
 		// urlcors = "https://chat.khorog.dev"
 	}
 // ssd
