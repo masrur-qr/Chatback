@@ -76,7 +76,7 @@ func Create(c *gin.Context) {
 			MaxAge: 0,
 			Secure:   true,
 			Path:     "/",
-			Domain:   "chat.khorog.dev",
+			Domain:   "https://chat.khorog.dev",
 		})
 
 		c.JSON(200, gin.H{
@@ -115,7 +115,7 @@ func Signin(c *gin.Context) {
 			Secure:   true,
 			SameSite: http.SameSiteNoneMode,
 			Path:     "/",
-			Domain:   "chat.khorog.dev",
+			Domain:   "https://chat.khorog.dev",
 		})
 		c.JSON(200, gin.H{
 			"Code":"Authorize",
