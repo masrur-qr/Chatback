@@ -37,7 +37,7 @@ func Create(c *gin.Context) {
 	}
 	fmt.Printf("jsonFM: %v\n", string(jsonFM))	
 	fmt.Printf("files: %v\n", files)
-	imguid := readwrite.ParseFile(c,"./static/upload")
+	imguid := readwrite.ParseFile(c,"./",10)
 	// log.Println("9i")
 	var (
 		user structs.Create
@@ -65,18 +65,17 @@ func Create(c *gin.Context) {
 		// fmt.Printf("imguid: %v\n", imguid)
 		connection.InsertOne(mongoconn.Ctx, user)
 
-		// jsstring, _ := json.Marshal(user.Name + ":" + user.Surname + ":" + user.UserId + ":" + user.Login + ":" + user.Imgurl)
+		user.Password = ""
+		jsstring, _ := json.Marshal(user)
 
 		http.SetCookie(c.Writer, &http.Cookie{
 			Name:     "token",
-			Value:    user.Name + ":" + user.Surname + ":" + user.UserId + ":" + user.Login + ":" + user.Imgurl,
+			Value:    string(jsstring),
 			Expires:  time.Now().Add(30 * time.Hour),
 			HttpOnly: false,
-			SameSite: http.SameSiteNoneMode,
-			MaxAge: 0,
-			Secure:   true,
+			Secure:   false,
 			Path:     "/",
-			Domain:   ".khorog.dev",
+			Domain:   "",
 		})
 
 		c.JSON(200, gin.H{
@@ -103,19 +102,17 @@ func Signin(c *gin.Context) {
 	connection := mongoconn.Client.Database("Chat").Collection("users")
 	connection.FindOne(mongoconn.Ctx, bson.M{"login": user.Login}).Decode(&DecodeUser)
 
-	jsstring, _ := json.Marshal(DecodeUser.Name+":"+DecodeUser.Surname+":"+DecodeUser.UserId + ":" + DecodeUser.Login + ":" + DecodeUser.Imgurl)
-
+	jsstring , _ := json.Marshal(DecodeUser)
 	if DecodeUser.Password == user.Password {
 		log.Println(string(jsstring))
 		http.SetCookie(c.Writer, &http.Cookie{
 			Name:     "token",
-			Value:    DecodeUser.Name+":"+DecodeUser.Surname+":"+DecodeUser.UserId + ":" + DecodeUser.Login + ":" + DecodeUser.Imgurl,
+			Value:    string(jsstring),
 			Expires:  time.Now().Add(30 * time.Hour),
 			HttpOnly: false,
-			Secure:   true,
-			SameSite: http.SameSiteNoneMode,
+			Secure:   false,
 			Path:     "/",
-			Domain:   ".khorog.dev",
+			Domain:   "",
 		})
 		c.JSON(200, gin.H{
 			"Code":"Authorize",
@@ -135,8 +132,8 @@ func WebSocket(c *gin.Context) {
 	if err != nil{
 		log.Printf("Cookie err %v",err)
 	}
-	cookiedata := strings.Split(cookie.Value, ":")
-	log.Printf("cookie value%v",strings.Split(cookie.Value, ":")[2])
+	cookiedata := strings.Split(strings.Join(strings.Split(strings.Join(strings.Split(cookie.Value, "{"), " "), "}"), " "), ",")
+	log.Printf("cookie value%v",strings.Split(cookiedata[0], ":")[1])
 	
 	upgrader.CheckOrigin = func(r *http.Request) bool {
 		return true
@@ -148,56 +145,39 @@ func WebSocket(c *gin.Context) {
 	}
 	curentuser := &WebHandler{
 		Connection: webSock,
-		Uid: cookiedata[2],
+		Uid: strings.Split(cookiedata[0], ":")[1],
 	}
 	// !========================= Add connection into Db ============================
 	mongoconn.Connection()
 	userconnection := mongoconn.Client.Database("Chat").Collection("users")
 	var Decodedata structs.Create
-	userconnection.FindOne(mongoconn.Ctx,bson.M{"_id": cookiedata[2]}).Decode(&Decodedata)
+	userconnection.FindOne(mongoconn.Ctx,bson.M{"_id": strings.Split(cookiedata[0], ":")[1]}).Decode(&Decodedata)
 	if Decodedata.LastName != ""{
-		println("Hello")
-		// var NewConnectionArr []WebHandler
 		// var LocalPaste bool = false
-		// ! remocve existing connection and appened new one
 		for index , item := range ConnectionArr {
-			fmt.Printf("item.Uid: %v\n", item.Uid)
-			fmt.Printf("item.Rid: %v\n", item.Rid)
-			if item.Uid == cookiedata[2]{
+			if item.Uid == strings.Split(cookiedata[0], ":")[1]{
 				// LocalPaste = true
-				if index == len(ConnectionArr){
-					ConnectionArr = append(ConnectionArr[:index-1],ConnectionArr[index:]...)
-				}else{
-					ConnectionArr = append(ConnectionArr[:index],ConnectionArr[index+1:]...)
-				}
-			}else{
-				fmt.Println("sorry error")
+				ConnectionArr = ConnectionArr[:index]
+				fmt.Printf("ConnectionArr[:index]: %v\n", ConnectionArr[index:index+1])
 			}
 		}
 		ConnectionArr = append(ConnectionArr, WebHandler{
 			Connection: webSock,
 			Uid: Decodedata.UserId,
 		})
-		fmt.Printf("ConnectionArr 3 final %v\n", ConnectionArr)
-		//! olso remove clear chat with arrey
-		curentuser.ClearCatwith()
 	}
+	
 	// =================== CaLl read Massage function =================================
 	go curentuser.ReadMessage()
 }
 
 func Cors(c *gin.Context) {
 	if urlcors == "" {
-		// urlcors = "http://127.0.0.1:3000"
-		// urlcors = "http://192.168.0.108:3000"
-		urlcors = "https://chat.khorog.dev"
-		// urlcors = "https://chat.khorog.dev"
+		urlcors = "http://127.0.0.1:3000"
 	}
-// ssd
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", urlcors)
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, ResponseType, accept, origin, Cache-Control, X-Requested-With")
 }
-

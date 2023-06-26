@@ -8,10 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ParseFile(c *gin.Context,directory string) (string){
+func ParseFile(c *gin.Context,directory string,fileSize int64) (string){
 	// """"""""""""""""""get the img""""""""""""""""""
 	// upload of 10MB files
-	c.Request.ParseMultipartForm(10 << 20)
+	c.Request.ParseMultipartForm(fileSize * 1024 * 1024)
 	// formFiles haeders
 	files, handler, err := c.Request.FormFile("img")
 	if err != nil {

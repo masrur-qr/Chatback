@@ -4,14 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"math/rand"
+	"time"
 
 	"websockettwo/chaty.com/mongoconn"
+	"websockettwo/chaty.com/readwrite"
 	"websockettwo/chaty.com/structs"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
@@ -21,6 +26,7 @@ type WebHandler struct {
 	Pasword    string          `json:"password"`
 	Uid        string          `json:"uid"`
 	Rid        string          `json:"rid"`
+	contextGin *gin.Context
 }
 
 var (
@@ -34,6 +40,7 @@ var (
 )
 
 func (cl *WebHandler) ReadMessage() {
+	// ! Read message can be handled with code bellow
 	for {
 		_, message, err := cl.Connection.ReadMessage()
 		if err != nil {
@@ -41,36 +48,62 @@ func (cl *WebHandler) ReadMessage() {
 			return
 		}
 		MessageFromUser = message
+		fmt.Println(string(MessageFromUser))
+		// // !handling img
+		// randId := rand.Intn(1000)*int(time.Millisecond)
+		// fmt.Printf("randId: %v\n", randId)
+		// // "./staticupload-"+
+		// err = ioutil.WriteFile(fmt.Sprint(randId)+".png", MessageFromUser, 0644)
+		// if err != nil {
+		// 	log.Println("Error saving file:", err)
+		// 	return
+		// }
+		// fmt.Println("File received and saved successfully.")
+		// // !handling img
+
 		json.Unmarshal(message, &handler)
 
-		fmt.Printf("handler: %v\n", handler)
+		// fmt.Printf("handler: %v\n", handler)
 		curentuser := &WebHandler{
 			Connection: cl.Connection,
 			Type:       handler.Type,
 			Uid:        cl.Uid,
 			Rid:        handler.ReciverId,
 		}
-		fmt.Printf("curentuser: %v\n", curentuser)
-		fmt.Printf("ConnectionArr: %v\n", ConnectionArr)
+		// fmt.Printf("curentuser: %v\n", curentuser)
+		// fmt.Printf("ConnectionArr: %v\n", ConnectionArr)
 
 		curentuser.WriteMessage()
-	}
-	// fmt.Printf("handler: %v\n", string(message))
 
+	}
 }
 
 func (cl *WebHandler) WriteMessage() {
+	// ? Write message can be handled by code bellow
 	if cl.Type == "message" {
 		cl.message()
 	} else if cl.Type == "list" {
 		cl.list()
 	} else if cl.Type == "chatwith" {
 		cl.chatwith()
+	} else {
+		// cl.handleFile()
+		// !handling img
+		randId := rand.Intn(1000) * int(time.Millisecond)
+		fmt.Printf("randId: %v\n", randId)
+		// "./staticupload-"+
+		err := ioutil.WriteFile(fmt.Sprint(randId)+".png", MessageFromUser, 0644)
+		if err != nil {
+			log.Println("Error saving file:", err)
+			return
+		}
+		fmt.Println("File received and saved successfully.")
+		// !handling img
 	}
 }
 
 func NotificationSend(ReciverId string, connection *websocket.Conn) {
-	log.Printf("id%v", ReciverId)
+	// log.Printf("id%v", ReciverId)
 	var (
 		// message      structs.Message
 		notification        structs.Notification
@@ -82,7 +115,7 @@ func NotificationSend(ReciverId string, connection *websocket.Conn) {
 	// ! ===================================== Get the note from DB ====================================
 	userconnection := mongoconn.Client.Database("Chat").Collection("users")
 	userconnection.FindOne(mongoconn.Ctx, bson.M{"_id": ReciverId, "status": "online"}).Decode(&user)
-	fmt.Printf("user: %v\n", user)
+	// fmt.Printf("user: %v\n", user)
 
 	// ! ===================================== Get the note from DB ====================================
 	notificationConnection := mongoconn.Client.Database("Chat").Collection("notifications")
@@ -116,7 +149,7 @@ func NotificationSend(ReciverId string, connection *websocket.Conn) {
 			}
 		}
 	}
-	fmt.Printf("userSendMEssage: %v\n", userSendMEssage)
+	// fmt.Printf("userSendMEssage: %v\n", userSendMEssage)
 	// ! create slice of user id and amount of message
 	for _, itemUser := range userSendMEssage {
 		testArr = make([]structs.Notification, 0)
@@ -135,12 +168,12 @@ func NotificationSend(ReciverId string, connection *websocket.Conn) {
 			})
 		}
 	}
-	fmt.Printf("testArr: %v\n", testArr)
+	// fmt.Printf("testArr: %v\n", testArr)
 	if len(notificationArrSend) != 0 {
 		for _, item := range ConnectionArr {
 			if item.Uid == user.UserId {
 				jsnote, _ := json.Marshal(NotificationStructArr)
-				fmt.Printf("NotificationStructArr: %v\n", NotificationStructArr)
+				// fmt.Printf("NotificationStructArr: %v\n", NotificationStructArr)
 				NotificationStructArr = make([]structs.NotificationStruct, 0)
 				err := item.Connection.WriteMessage(websocket.TextMessage, jsnote)
 				if err != nil {
@@ -157,7 +190,7 @@ func (cl *WebHandler) list() {
 		Users           structs.Create
 		OnlineUsersList []structs.Create
 	)
-	fmt.Printf("cl: %v\n", cl)
+	// fmt.Printf("cl: %v\n", cl)
 	//===================================== Make User Online ====================================
 	err := userconnection.FindOneAndUpdate(context.Background(), bson.M{"_id": cl.Uid}, bson.M{"$set": bson.M{"status": "online"}}).Decode(&Decodedata)
 	if err != nil {
@@ -210,12 +243,12 @@ func (cl *WebHandler) chatwith() {
 	cl.Connection.WriteMessage(websocket.TextMessage, jsmessages)
 	// * ======================================== Remove Notification with that user ==================================
 	connectionNot := mongoconn.Client.Database("Chat").Collection("notifications")
-	result, err := connectionNot.DeleteMany(mongoconn.Ctx, bson.M{"userid": cl.Rid, "reciverid": cl.Uid})
+	_, err = connectionNot.DeleteMany(mongoconn.Ctx, bson.M{"userid": cl.Rid, "reciverid": cl.Uid})
 	// connectionNot.DeleteMany(mongoconn.Ctx, bson.M{"userid": cl.Uid,"reciverid": handler.ReciverId})
 	if err != nil {
 		log.Printf("Error delete the notification %v", err)
 	}
-	fmt.Printf("result: %v\n", result)
+	// fmt.Printf("result: %v\n", result)
 	// ! ===================================== Add users to chat withh arrey =========================================
 	// loop though the chatwith and delete the user if it exist there
 	cl.ClearCatwith()
@@ -225,7 +258,6 @@ func (cl *WebHandler) chatwith() {
 		Uid:  cl.Uid,
 		Rid:  cl.Rid,
 	})
-	fmt.Printf("ChatWithArr: %v\n", ChatWithArr)
 }
 func (cl *WebHandler) message() {
 	var (
@@ -235,11 +267,9 @@ func (cl *WebHandler) message() {
 		Messages       structs.Message
 		MessagesDecode structs.Message
 		MessagesArr    []structs.Message
-		// user         structs.Create
-		// user         structs.Create
 	)
 	json.Unmarshal(MessageFromUser, &MessagesDecode)
-	fmt.Printf("MessageFromUser: %v\n", MessagesDecode)
+	// fmt.Printf("MessageFromUser: %v\n", MessagesDecode)
 	mongoconn.Connection()
 	connection := mongoconn.Client.Database("Chat").Collection("messages")
 	// ? ===================================== Insert Message into DB ====================================
@@ -284,10 +314,7 @@ func (cl *WebHandler) message() {
 
 	if isFind == false {
 		println("walek")
-		var (
-		// noteArr []structs.Notification
-		// note    structs.Notification
-		)
+		var ()
 		// ++++++++++++++++++++++++ Else add notification ++++++++++++++++++++++++++++++++++++
 		// ? ===================================== Insert Notification to user into DB ====================================
 		notificationConnection := mongoconn.Client.Database("Chat").Collection("notifications")
@@ -300,28 +327,18 @@ func (cl *WebHandler) message() {
 		// fmt.Printf("string(jsmessages): %v\n", string(jsmessages))
 
 		// ?============================= Send Notification to user =============================
-		// curNote, Err := notificationConnection.Find(mongoconn.Ctx, bson.M{"reciverid": cl.Rid})
-		// if Err != nil {
-		// 	log.Fatalf("Error find Any note %v", Err)
-		// }
-		// defer curNote.Close(mongoconn.Ctx)
-		// for curNote.Next(mongoconn.Ctx) {
-		// 	curNote.Decode(&note)
-		// 	noteArr = append(noteArr, note)
-		// }
-		// for _, item := range ConnectionArr {
-		// 	println("send note")
-		// 	jsmessages, _ := json.Marshal(&noteArr)
-		// 	item.Connection.WriteMessage(websocket.TextMessage, jsmessages)
-		// }
 		NotificationSend(cl.Rid, cl.Connection)
 		cl.Connection.WriteMessage(websocket.TextMessage, jsmessages)
 	}
 }
+func (cl *WebHandler) handleFile() {
+	cl.message()
+	imguid := readwrite.ParseFile(cl.contextGin, "./", 3)
+	fmt.Printf("imguid: %v\n", imguid)
+}
 
 func (cl *WebHandler) ClearCatwith() {
 	for index, item := range ChatWithArr {
-		fmt.Printf("index: %v\n", index)
 		if item.Uid == cl.Uid {
 			if index == len(ChatWithArr) {
 				ChatWithArr = append(ChatWithArr[:index-1], ChatWithArr[index:]...)
