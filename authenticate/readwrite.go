@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"websockettwo/chaty.com/mongoconn"
@@ -37,6 +38,7 @@ var (
 	testArr               []structs.Notification
 	userSendMEssage       []string
 	NotificationStructArr []structs.NotificationStruct
+	randId int
 )
 
 func (cl *WebHandler) ReadMessage() {
@@ -48,18 +50,24 @@ func (cl *WebHandler) ReadMessage() {
 			return
 		}
 		MessageFromUser = message
-		fmt.Println(string(MessageFromUser))
-		// // !handling img
-		// randId := rand.Intn(1000)*int(time.Millisecond)
-		// fmt.Printf("randId: %v\n", randId)
-		// // "./staticupload-"+
-		// err = ioutil.WriteFile(fmt.Sprint(randId)+".png", MessageFromUser, 0644)
-		// if err != nil {
-		// 	log.Println("Error saving file:", err)
-		// 	return
-		// }
-		// fmt.Println("File received and saved successfully.")
-		// // !handling img
+		// userType := strings.Split(strings.Split(strings.Split(string(MessageFromUser), ":")[1], ",")[0], `"`)[1]
+		userType := strings.Split(string(MessageFromUser), ",")
+		fmt.Printf("userType: %v\n", len(userType))
+		if len(userType) > 5 {
+			// !handling img
+			randId = rand.Intn(1000) * int(time.Second)
+			fmt.Printf("randId: %v\n", randId)
+			// "./staticupload-"+
+			err = ioutil.WriteFile("./static/"+fmt.Sprint(randId)+".png", MessageFromUser, 0644)
+			if err != nil {
+				log.Println("Error saving file:", err)
+				return
+			}
+			fmt.Println("File received and saved successfully.")
+			// !handling img
+			cl.Type = ""
+			cl.message()
+		}
 
 		json.Unmarshal(message, &handler)
 
@@ -81,24 +89,14 @@ func (cl *WebHandler) ReadMessage() {
 func (cl *WebHandler) WriteMessage() {
 	// ? Write message can be handled by code bellow
 	if cl.Type == "message" {
+		fmt.Println("mes")
 		cl.message()
 	} else if cl.Type == "list" {
+		fmt.Println("lis")
 		cl.list()
 	} else if cl.Type == "chatwith" {
+		fmt.Println("cht")
 		cl.chatwith()
-	} else {
-		// cl.handleFile()
-		// !handling img
-		randId := rand.Intn(1000) * int(time.Millisecond)
-		fmt.Printf("randId: %v\n", randId)
-		// "./staticupload-"+
-		err := ioutil.WriteFile(fmt.Sprint(randId)+".png", MessageFromUser, 0644)
-		if err != nil {
-			log.Println("Error saving file:", err)
-			return
-		}
-		fmt.Println("File received and saved successfully.")
-		// !handling img
 	}
 }
 
@@ -140,7 +138,6 @@ func NotificationSend(ReciverId string, connection *websocket.Conn) {
 						isFind = true
 					}
 				}
-				fmt.Println(isFind)
 				if !isFind {
 					userSendMEssage = append(userSendMEssage, notItem.UserId)
 				}
@@ -278,7 +275,15 @@ func (cl *WebHandler) message() {
 	MessagesDecode.UserId = cl.Uid
 	MessagesDecode.Type = "message"
 	MessagesDecode.ReciverId = handler.ReciverId
-	connection.InsertOne(mongoconn.Ctx, MessagesDecode)
+	if cl.Type == ""{
+		MessagesDecode.Type = "file"
+		fmt.Sprint(randId)
+		fmt.Println(randId)
+		MessagesDecode.Text = fmt.Sprint(randId)+".png"
+	}
+	if MessagesDecode.Text != "" {
+		connection.InsertOne(mongoconn.Ctx, MessagesDecode)
+	}
 	// ! ===================================== Get the note from DB ====================================
 	// ===================================== Send Message To User =====================================
 	userconnection := mongoconn.Client.Database("Chat").Collection("users")
