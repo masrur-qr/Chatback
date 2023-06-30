@@ -26,8 +26,8 @@ var (
 		WriteBufferSize: 1024,
 	}
 	urlcors = os.Getenv("URL")
-	// domainCookie = ".khorog.dev"
-	domainCookie = "/"
+	domainCookie = ".khorog.dev"
+	// domainCookie = "/"
 )
 
 func Create(c *gin.Context) {
@@ -136,6 +136,7 @@ func WebSocket(c *gin.Context) {
 		log.Printf("Cookie err %v",err)
 	}
 	cookiedata := strings.Split(cookie.Value, ":")
+	fmt.Printf("cookiedata: %v\n", cookiedata)
 	// log.Printf("cookie value%v",strings.Split(cookie.Value, ":")[2])
 	// ? Upgrade ?? check again
 	upgrader.CheckOrigin = func(r *http.Request) bool {
