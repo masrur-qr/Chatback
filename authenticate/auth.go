@@ -172,9 +172,11 @@ func WebSocket(c *gin.Context) {
 }
 
 func Cors(c *gin.Context) {
+	fmt.Printf("urlcors: %v\n", urlcors)
 	if urlcors == "" {
 		urlcors = "http://127.0.0.1:3000"
 	}
+	fmt.Printf("urlcors: %v\n", urlcors)
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", urlcors)
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
