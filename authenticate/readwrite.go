@@ -78,8 +78,8 @@ func (cl *WebHandler) ReadMessage() {
 			Uid:        cl.Uid,
 			Rid:        handler.ReciverId,
 		}
-		// fmt.Printf("curentuser: %v\n", curentuser)
-		// fmt.Printf("ConnectionArr: %v\n", ConnectionArr)
+		fmt.Printf("curentuser: %v\n", curentuser)
+		fmt.Printf("ConnectionArr: %v\n", ConnectionArr)
 
 		curentuser.WriteMessage()
 
