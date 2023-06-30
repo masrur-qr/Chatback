@@ -40,7 +40,7 @@ func Create(c *gin.Context) {
 	}
 	// fmt.Printf("jsonFM: %v\n", string(jsonFM))	
 	// fmt.Printf("files: %v\n", files)
-	imguid := readwrite.ParseFile(c,"./static/upload",3)
+	imguid := readwrite.ParseFile(c,"./static/upload",10)
 	// log.Println("9i")
 	var (
 		user structs.Create
