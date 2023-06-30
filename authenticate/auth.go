@@ -35,30 +35,29 @@ func Create(c *gin.Context) {
 			"sttus": "NOIMGFILEEXIST",
 		})
 	}
-	fmt.Printf("jsonFM: %v\n", string(jsonFM))	
+	fmt.Printf("jsonFM: %v\n", string(jsonFM))
 	fmt.Printf("files: %v\n", files)
-	imguid := readwrite.ParseFile(c,"./",10)
+	imguid := readwrite.ParseFile(c, "./", 10)
 	// log.Println("9i")
 	var (
 		user structs.Create
 		// decode structs.Create
 	)
 	err := json.Unmarshal([]byte(jsonFM), &user)
-	if err != nil{
+	if err != nil {
 		log.Printf("err %v", err)
 	}
 	// fmt.Printf("user: %v\n", user)
 
 	mongoconn.Connection()
 	connection := mongoconn.Client.Database("Chat").Collection("users")
-	usercount , err := connection.CountDocuments(mongoconn.Ctx, bson.M{"name": user.Name, "lastname": user.LastName, "surname": user.Surname, "login": user.Login})
+	usercount, err := connection.CountDocuments(mongoconn.Ctx, bson.M{"name": user.Name, "lastname": user.LastName, "surname": user.Surname, "login": user.Login})
 	fmt.Printf("userCount: %v\n", usercount)
-	if err != nil{
-		log.Printf("Error count %v ",err)
+	if err != nil {
+		log.Printf("Error count %v ", err)
 	}
 
-
-	if usercount == 0 && user.Name != ""{
+	if usercount == 0 && user.Name != "" {
 		userID := primitive.NewObjectID().Hex()
 		user.UserId = userID
 		user.Imgurl = "-" + imguid
@@ -66,11 +65,11 @@ func Create(c *gin.Context) {
 		connection.InsertOne(mongoconn.Ctx, user)
 
 		user.Password = ""
-		jsstring, _ := json.Marshal(user)
+		// jsstring, _ := json.Marshal(user)
 
 		http.SetCookie(c.Writer, &http.Cookie{
 			Name:     "token",
-			Value:    string(jsstring),
+			Value:    user.Name + ":" + user.Surname + ":" + user.UserId + ":" + user.Login + ":" + user.Imgurl,
 			Expires:  time.Now().Add(30 * time.Hour),
 			HttpOnly: false,
 			Secure:   true,
@@ -79,12 +78,12 @@ func Create(c *gin.Context) {
 		})
 
 		c.JSON(200, gin.H{
-			"Code":"User",
+			"Code": "User",
 		})
 	} else {
 		// w.Write([]byte("User Already Exist"))
 		c.JSON(309, gin.H{
-			"Code":"user Exist",
+			"Code": "user Exist",
 		})
 	}
 }
@@ -94,7 +93,7 @@ func Signin(c *gin.Context) {
 	fmt.Printf("user: %v\n", user)
 	// err := json.NewDecoder(r.Body).Decode(&user)
 	// if err != nil {
-		// log.Printf("Err Decode%v\n", err)
+	// log.Printf("Err Decode%v\n", err)
 	// }
 
 	var DecodeUser structs.Create
@@ -102,12 +101,12 @@ func Signin(c *gin.Context) {
 	connection := mongoconn.Client.Database("Chat").Collection("users")
 	connection.FindOne(mongoconn.Ctx, bson.M{"login": user.Login}).Decode(&DecodeUser)
 
-	jsstring , _ := json.Marshal(DecodeUser)
+	jsstring, _ := json.Marshal(DecodeUser)
 	if DecodeUser.Password == user.Password {
 		log.Println(string(jsstring))
 		http.SetCookie(c.Writer, &http.Cookie{
 			Name:     "token",
-			Value:    string(jsstring),
+			Value:    user.Name + ":" + user.Surname + ":" + user.UserId + ":" + user.Login + ":" + user.Imgurl,
 			Expires:  time.Now().Add(30 * time.Hour),
 			HttpOnly: false,
 			Secure:   true,
@@ -115,26 +114,26 @@ func Signin(c *gin.Context) {
 			Domain:   ".khorog.dev",
 		})
 		c.JSON(200, gin.H{
-			"Code":"Authorize",
+			"Code": "Authorize",
 		})
 	} else {
 		// w.Write([]byte("Cannot Authorize"))
 		c.JSON(309, gin.H{
-			"Code":"Cannot Authorize",
+			"Code": "Cannot Authorize",
 		})
 	}
 }
 func WebSocket(c *gin.Context) {
 	var (
-		// user structs.Create
+	// user structs.Create
 	)
-	cookie , err := c.Request.Cookie("token")
-	if err != nil{
-		log.Printf("Cookie err %v",err)
+	cookie, err := c.Request.Cookie("token")
+	if err != nil {
+		log.Printf("Cookie err %v", err)
 	}
 	cookiedata := strings.Split(strings.Join(strings.Split(strings.Join(strings.Split(cookie.Value, "{"), " "), "}"), " "), ",")
-	log.Printf("cookie value%v",strings.Split(cookiedata[0], ":")[1])
-	
+	log.Printf("cookie value%v", strings.Split(cookiedata[0], ":")[1])
+
 	upgrader.CheckOrigin = func(r *http.Request) bool {
 		return true
 	}
@@ -145,17 +144,17 @@ func WebSocket(c *gin.Context) {
 	}
 	curentuser := &WebHandler{
 		Connection: webSock,
-		Uid: strings.Split(cookiedata[0], ":")[1],
+		Uid:        strings.Split(cookiedata[0], ":")[1],
 	}
 	// !========================= Add connection into Db ============================
 	mongoconn.Connection()
 	userconnection := mongoconn.Client.Database("Chat").Collection("users")
 	var Decodedata structs.Create
-	userconnection.FindOne(mongoconn.Ctx,bson.M{"_id": strings.Split(cookiedata[0], ":")[1]}).Decode(&Decodedata)
-	if Decodedata.LastName != ""{
+	userconnection.FindOne(mongoconn.Ctx, bson.M{"_id": strings.Split(cookiedata[0], ":")[1]}).Decode(&Decodedata)
+	if Decodedata.LastName != "" {
 		// var LocalPaste bool = false
-		for index , item := range ConnectionArr {
-			if item.Uid == strings.Split(cookiedata[0], ":")[1]{
+		for index, item := range ConnectionArr {
+			if item.Uid == strings.Split(cookiedata[0], ":")[1] {
 				// LocalPaste = true
 				ConnectionArr = ConnectionArr[:index]
 				fmt.Printf("ConnectionArr[:index]: %v\n", ConnectionArr[index:index+1])
@@ -163,10 +162,10 @@ func WebSocket(c *gin.Context) {
 		}
 		ConnectionArr = append(ConnectionArr, WebHandler{
 			Connection: webSock,
-			Uid: Decodedata.UserId,
+			Uid:        Decodedata.UserId,
 		})
 	}
-	
+
 	// =================== CaLl read Massage function =================================
 	go curentuser.ReadMessage()
 }
