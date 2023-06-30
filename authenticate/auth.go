@@ -73,9 +73,9 @@ func Create(c *gin.Context) {
 			Value:    string(jsstring),
 			Expires:  time.Now().Add(30 * time.Hour),
 			HttpOnly: false,
-			Secure:   false,
+			Secure:   true,
 			Path:     "/",
-			Domain:   "",
+			Domain:   ".khorog.dev",
 		})
 
 		c.JSON(200, gin.H{
@@ -110,9 +110,9 @@ func Signin(c *gin.Context) {
 			Value:    string(jsstring),
 			Expires:  time.Now().Add(30 * time.Hour),
 			HttpOnly: false,
-			Secure:   false,
+			Secure:   true,
 			Path:     "/",
-			Domain:   "",
+			Domain:   ".khorog.dev",
 		})
 		c.JSON(200, gin.H{
 			"Code":"Authorize",
