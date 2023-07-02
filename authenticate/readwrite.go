@@ -2,13 +2,14 @@ package authenticate
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"strings"
-	"time"
+	// "time"
 
 	"websockettwo/chaty.com/mongoconn"
 	"websockettwo/chaty.com/readwrite"
@@ -28,6 +29,7 @@ type WebHandler struct {
 	Uid        string          `json:"uid"`
 	Rid        string          `json:"rid"`
 	contextGin *gin.Context
+	Text       string `bson:"text"`
 }
 
 var (
@@ -38,8 +40,19 @@ var (
 	testArr               []structs.Notification
 	userSendMEssage       []string
 	NotificationStructArr []structs.NotificationStruct
-	randId int
+	randId                int
 )
+
+type FileReadData struct {
+	File string
+	Json string
+}
+
+func Split(strToSplit string) []string {
+	var splitResult = strings.Split(strings.Join(strings.Split(strings.Join(strings.Split(strings.Join(strings.Split(strToSplit, "{"), ""), ":"), ""), ","), ""), `"`)
+
+	return splitResult
+}
 
 func (cl *WebHandler) ReadMessage() {
 	// ! Read message can be handled with code bellow
@@ -50,15 +63,35 @@ func (cl *WebHandler) ReadMessage() {
 			return
 		}
 		MessageFromUser = message
+		fmt.Printf("MessageFromUser: %v\n", string(MessageFromUser))
+
 		// userType := strings.Split(strings.Split(strings.Split(string(MessageFromUser), ":")[1], ",")[0], `"`)[1]
 		userType := strings.Split(string(MessageFromUser), ",")
 		fmt.Printf("userType: %v\n", len(userType))
-		if len(userType) > 5 {
+		if len(userType) >= 5 {
+			// // !============= marshel the message
+			var ReadFileData FileReadData
+			err = json.Unmarshal(MessageFromUser, &ReadFileData)
+			if err != nil {
+				fmt.Printf("err unmarshel%v", err)
+			}
+			fmt.Printf("ReadFileData.Json: %v\n", ReadFileData.Json)
+			// fmt.Printf("ReadFileData: %v\n", ReadFileData.File)
+			// !============= unmarrshel the file into byte
+			resultOfSplit := Split(ReadFileData.Json)
+			fmt.Printf("resultOfSplit: %v\n", resultOfSplit)
+			// !base 64
+			binaryData, err := base64.StdEncoding.DecodeString(ReadFileData.File)
+			if err != nil {
+				// log.Fatal(err)
+				fmt.Printf("err: %v\n", err)
+			}
+
 			// !handling img
-			randId = rand.Intn(1000) * int(time.Second)
+			randId = rand.Intn(100000)
 			fmt.Printf("randId: %v\n", randId)
 			// "./staticupload-"+
-			err = ioutil.WriteFile("./static/"+fmt.Sprint(randId)+".png", MessageFromUser, 0644)
+			err = ioutil.WriteFile("./static/"+fmt.Sprint(randId)+cl.Uid+".png", binaryData, 0644)
 			if err != nil {
 				log.Println("Error saving file:", err)
 				return
@@ -66,23 +99,28 @@ func (cl *WebHandler) ReadMessage() {
 			fmt.Println("File received and saved successfully.")
 			// !handling img
 			cl.Type = ""
+			if cl.Uid == resultOfSplit[7] {
+				cl.Rid = resultOfSplit[11]
+			} else {
+				cl.Rid = resultOfSplit[7]
+			}
+			cl.Text = resultOfSplit[15]
 			cl.message()
+		} else {
+			json.Unmarshal(message, &handler)
+
+			// fmt.Printf("handler: %v\n", handler)
+			curentuser := &WebHandler{
+				Connection: cl.Connection,
+				Type:       handler.Type,
+				Uid:        cl.Uid,
+				Rid:        handler.ReciverId,
+			}
+			fmt.Printf("curentuser: %v\n", curentuser)
+			fmt.Printf("ConnectionArr: %v\n", ConnectionArr)
+
+			curentuser.WriteMessage()
 		}
-
-		json.Unmarshal(message, &handler)
-
-		// fmt.Printf("handler: %v\n", handler)
-		curentuser := &WebHandler{
-			Connection: cl.Connection,
-			Type:       handler.Type,
-			Uid:        cl.Uid,
-			Rid:        handler.ReciverId,
-		}
-		fmt.Printf("curentuser: %v\n", curentuser)
-		fmt.Printf("ConnectionArr: %v\n", ConnectionArr)
-
-		curentuser.WriteMessage()
-
 	}
 }
 
@@ -275,11 +313,16 @@ func (cl *WebHandler) message() {
 	MessagesDecode.UserId = cl.Uid
 	MessagesDecode.Type = "message"
 	MessagesDecode.ReciverId = handler.ReciverId
-	if cl.Type == ""{
+	if cl.Type == "" {
 		MessagesDecode.Type = "file"
 		fmt.Sprint(randId)
 		fmt.Println(randId)
-		MessagesDecode.Text = fmt.Sprint(randId)+".png"
+		MessagesDecode.ImgUrl = fmt.Sprint(randId) + cl.Uid + ".png"
+		if cl.Text != "" {
+			MessagesDecode.Text = cl.Text
+		}else{
+			MessagesDecode.Text = " "
+		}
 	}
 	if MessagesDecode.Text != "" {
 		connection.InsertOne(mongoconn.Ctx, MessagesDecode)
@@ -305,6 +348,10 @@ func (cl *WebHandler) message() {
 	}
 	var isFind = false
 	jsmessages, _ := json.Marshal(MessagesArr)
+	fmt.Printf("ConnectionArr: %v\n", ConnectionArr)
+	fmt.Printf("cl: %v\n", cl)
+	fmt.Printf("ChatWithArr: %v\n", ChatWithArr)
+	// problem is the rid is not comeing you need to send file + json
 	for _, chatWithItem := range ChatWithArr {
 		//!----------------------------- Marshel the message -----------------------------
 		if chatWithItem.Uid == cl.Rid && chatWithItem.Rid == cl.Uid {

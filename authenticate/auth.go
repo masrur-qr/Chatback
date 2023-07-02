@@ -26,8 +26,8 @@ var (
 		WriteBufferSize: 1024,
 	}
 	urlcors = os.Getenv("URL")
-	domainCookie = ".khorog.dev"
-	// domainCookie = "/"
+	// domainCookie = ".khorog.dev"
+	domainCookie = "/"
 )
 
 func Create(c *gin.Context) {
@@ -77,7 +77,7 @@ func Create(c *gin.Context) {
 			HttpOnly: false,
 			SameSite: http.SameSiteNoneMode,
 			MaxAge: 0,
-			Secure:   true,
+			Secure:   false,
 			Path:     "/",
 			Domain: domainCookie,
 		})

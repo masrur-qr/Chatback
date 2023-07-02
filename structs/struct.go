@@ -24,22 +24,23 @@ type WebHandler struct {
 	ReciverId string `bson:"reciverid"`
 }
 type ChatWith struct {
-	Type       string          `json:"type"`
-	Uid        string          `json:"uid"`
-	Rid        string          `json:"rid"`
+	Type string `json:"type"`
+	Uid  string `json:"uid"`
+	Rid  string `json:"rid"`
 }
 type Message struct {
 	MessageId string `bson:"_id"`
 	UserId    string `bson:"userid"`
 	ReciverId string `bson:"reciverid"`
 	Text      string `bson:"text"`
+	ImgUrl    string `bson:"imgurl"`
 	Type      string `json:"type"`
 }
 type Notification struct {
 	NotificationId string `bson:"_id"`
 	UserId         string `bson:"userid"`
 	ReciverId      string `bson:"reciverid"`
-	Type      string `json:"type"`
+	Type           string `json:"type"`
 }
 type NotificationStruct struct {
 	UserId string `json:"userid"`
